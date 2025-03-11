@@ -145,12 +145,10 @@ def accept_order(order_id):
     publish(queue=SHIPMENT_ORDER_QUEUE_NAME, method='create_shipment', body={'order_id': order_id, 'user_id': order.user_id})
     return jsonify({"message": "Order accepted", "order_id": order_id}), 200
 
-# @order_bp.route('/orders/<int:order_id>/purchase_request', methods=['POST'])
-# @token_required
-# def purchase_request(order_id):
-#     order = Order.query.get(order_id)
-#     if not order:
-#         return jsonify({"error": "Order not found"}), 404
-#     publish(queue=PAYMENT_ORDER_QUEUE_NAME, method='purchase-request', body=json.dumps(order.to_dict()))
-#     return jsonify({"message": "Payment request sent", "order_id": order_id}), 200
+@order_bp.route('/orders/<int:order_id>', methods=['GET'])
+def purchase_request(order_id):
+    order = Order.query.get(order_id)
+    if not order:
+        return jsonify({"error": "Order not found"}), 404
+    return jsonify(order.to_dict()), 200
 

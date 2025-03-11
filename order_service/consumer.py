@@ -12,6 +12,7 @@ STATUS_MAPPING = {
 }
 RABBITMQ_HOST = 'localhost'
 SHIPMENT_ORDER_QUEUE_NAME = 'shipment-order'
+PAYMENT_ORDER_QUEUE_NAME = 'payment-order'
 credentials = pika.PlainCredentials("namdt25", "namdt25")
 parameters = pika.ConnectionParameters(
     host=RABBITMQ_HOST, 
@@ -52,7 +53,26 @@ def callback(ch, method, properties, body):
         except Exception as e:
             print(f"❌ Error processing message: {str(e)}")
 
-channel.basic_consume(queue=SHIPMENT_ORDER_QUEUE_NAME, on_message_callback=callback, auto_ack=True)
+def order_callback(ch, method, properties, body):
+    print("dddd")
+    with app.app_context():
+        try:
+            data = json.loads(body)
+            print(f"📥 Received message: {data}")
+            if properties.type == 'payment-status':
+                order_id = data['order_id']
+                order = Order.query.get(order_id)
+                if not order:
+                    print(f"❌ Order ID {order_id} not found.")
+                    return
+                order.status = 'paid'
+                db.session.commit()
+                print(f"✅ Order {order_id} updated to status: {order.status}") 
+        except Exception as e:
+            print(f"❌ Error processing message: {str(e)}")
 
+
+channel.basic_consume(queue=SHIPMENT_ORDER_QUEUE_NAME, on_message_callback=callback, auto_ack=True)
+channel.basic_consume(queue=PAYMENT_ORDER_QUEUE_NAME, on_message_callback=order_callback, auto_ack=True)
 print("🎧 Listening for order status change messages...")
 channel.start_consuming()

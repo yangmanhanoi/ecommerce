@@ -23,5 +23,5 @@ urlpatterns = [
     path('paypal-ipn/', include('paypal.standard.ipn.urls')),
     path('payment_success/', views.payment_success, name='payment_success'),
     path('payment_cancel/', views.payment_failed, name='payment_failed'),
-    path('paypal/', views.payment, name='payment')
+    path('paypal/<int:order_id>', views.payment, name='payment')
 ]

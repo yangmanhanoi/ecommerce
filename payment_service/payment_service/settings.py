@@ -30,6 +30,9 @@ ALLOWED_HOSTS = [
     "127.0.0.1", 
     "ethical-coral-apparently.ngrok-free.app"  # Add your ngrok domain here
 ]
+CSRF_TRUSTED_ORIGINS= [
+    "https://ethical-coral-apparently.ngrok-free.app"
+]
 
 # Application definition
 
@@ -41,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'paypal.standard.ipn',
+    'payment'
 ]
 
 MIDDLEWARE = [
@@ -129,6 +133,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Paypal settings
 # Set sandbox to true
 PAYPAL_TEST=True
-NGROK_STATIC_URL='https://ethical-coral-apparently.ngrok-free.app/' # port 80
+NGROK_STATIC_URL='https://ethical-coral-apparently.ngrok-free.app' # port 80
 PAYPAL_RECEIVER_EMAIL='business@namdt25.com' # bussiness sandbox account
 
