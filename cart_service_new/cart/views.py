@@ -40,7 +40,18 @@ def add_to_cart(request):
     price = product_detail.get("price", 0)
 
     cart, _ = Cart.objects.get_or_create(user_id=user_id)
-    cart_item = CartItem.objects.create(cart=cart, product_id=product_id, quantity=quantity, price_at_addition=price)
+    cart_item = CartItem.objects.create(cart=cart, product_id=product_id)
+
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, product_id=product_id)
+    
+    if created:
+        cart_item.quantity = quantity
+    else:
+        cart_item.quantity += quantity
+    
+    cart_item.price_at_addition = price
+    cart_item.price_at_addition = price
+    cart_item.save()
 
     return Response({"message": "Product added to cart!", "cart_item_id": cart_item.id}, status=201)
 
