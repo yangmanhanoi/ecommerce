@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'cart_service.middleware.JWTAuthMiddleware', 
+    'cart_service_new.middleware.JWTAuthMiddleware', 
 ]
 
 ROOT_URLCONF = 'cart_service_new.urls'
