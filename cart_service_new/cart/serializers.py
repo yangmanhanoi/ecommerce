@@ -4,7 +4,7 @@ from .models import Cart, CartItem
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ['id', 'cart', 'product_id', 'quantity', 'price_at_addition', 'added_at']
+        fields = ['id', 'product_id', 'quantity', 'added_at']
         read_only_fields = ['id', 'added_at']
 
 class CartSerializer(serializers.ModelSerializer):

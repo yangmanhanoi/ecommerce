@@ -8,8 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 
-PRODUCT_SERVICE_URL = 'http://localhost:5001/products/'
-SHIPMENT_SERVICE_URL = 'http://localhost:5003/shipments/'
+PRODUCT_SERVICE_URL = 'http://localhost:5001/api/product/'
+SHIPMENT_SERVICE_URL = 'http://localhost:5003/api/shipments/'
 
 def get_product_detail(product_id):
     """Retrieve product details from Product Service"""
@@ -21,9 +21,10 @@ def get_product_detail(product_id):
         return None
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def add_to_cart(request):
     """Add product to cart"""
+    # user_id = 1
     user_id = request.user.id
     serializer = CartItemSerializer(data=request.data)
     
@@ -37,12 +38,10 @@ def add_to_cart(request):
     if not product_detail:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    price = product_detail.get("price", 0)
     cart, _ = Cart.objects.get_or_create(user_id=user_id)
     
     cart_item, created = CartItem.objects.get_or_create(cart=cart, product_id=product_id)
     cart_item.quantity = cart_item.quantity + quantity if not created else quantity
-    cart_item.price_at_addition = price
     cart_item.save()
     
     return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)
@@ -57,10 +56,11 @@ def remove_from_cart(request, cart_item_id):
     return Response({"message": "Item removed from cart"}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def get_cart_items(request):
     """Retrieve cart items"""
     user_id = request.user.id
+    # user_id = 1
     cart = Cart.objects.filter(user_id=user_id).first()
     if not cart:
         return Response({"message": "Cart is empty"}, status=status.HTTP_200_OK)
@@ -84,7 +84,7 @@ def edit_cart(request, cart_item_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def calculate_total_price(request):
     """Calculate total cart price"""
     data = request.data.get("items", [])
@@ -114,14 +114,29 @@ def filter_cart_by_time(request):
     return Response(CartItemSerializer(cart_items, many=True).data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def check_out(request):
-    """Checkout and create shipment"""
+    user_id = request.user.id
+    # user_id = 1
     data = request.data.get("items", [])
+
+    # Fetch the user's cart (assuming Cart is linked by user_id)
+    cart = Cart.objects.filter(user_id=user_id).first()
+    if not cart:
+        return Response({"error": "Cart not found"}, status=status.HTTP_404_NOT_FOUND)
+
     headers = {"Authorization": request.headers.get("Authorization")}
-    shipment_response = requests.post(f"{SHIPMENT_SERVICE_URL}create-shipment", json={"items": data}, headers=headers)
     
+    # Ensure cart_id is sent in the request
+    shipment_payload = {
+        "cart_id": cart.id,
+        "items": data,
+        "shipping_address": request.data.get("shipping_address", ""),  # Ensure required fields are included
+        "shipping_cost": request.data.get("shipping_cost", 0.00)
+    }
+
+    shipment_response = requests.post(f"{SHIPMENT_SERVICE_URL}create/", json=shipment_payload, headers=headers)
+
     if shipment_response.status_code != 201:
-        return Response({"error": "Failed to create order", "details": shipment_response.json()}, status=shipment_response.status_code)
-    
+        return Response({"error": "Failed to create shipment", "details": shipment_response.json()}, status=shipment_response.status_code)
     return Response(shipment_response.json(), status=status.HTTP_201_CREATED)

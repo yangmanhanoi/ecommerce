@@ -8,14 +8,14 @@ from datetime import datetime
 import requests
 from django.conf import settings
 
-PAYMENT_SERVICE_URL = 'http://localhost:5001/products/'
+PAYMENT_SERVICE_URL = 'http://localhost:8001/api/payments/'
 
 # API 1: Create a Shipment (Called after checkout)
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def create_shipment(request):
     """Create shipment after checkout"""
-    user_id = request.user.id  # Assume user_id is in request.user
+  
     cart_id = request.data.get('cart_id')  # Get cart ID from request
     items = request.data.get('items', [])  # Get items from request
 
@@ -28,7 +28,7 @@ def create_shipment(request):
     shipment = Shipping.objects.create(
         cart_id=cart_id,
         tracking_number=tracking_number,
-        carrier="Django Express",  # Default carrier
+        carrier="Shopee",  # Default carrier
         shipping_address=request.data.get("shipping_address", ""),
         shipping_cost=request.data.get("shipping_cost", 0.00),
         status="pending"
@@ -37,24 +37,25 @@ def create_shipment(request):
     serializer = ShippingSerializer(shipment)
 
     # Notify Payment Service
-    payment_payload = {
-        "user_id": user_id,
-        "shipment_id": shipment.id,
-        "amount": shipment.shipping_cost,
-        "tracking_number": tracking_number
-    }
+    # payment_payload = {
+    #     "user_id": user_id,
+    #     "shipment_id": shipment.id,
+    #     "amount": shipment.shipping_cost,
+    #     "tracking_number": tracking_number
+    # }
     
-    payment_response = requests.post(f"{PAYMENT_SERVICE_URL}/create-payment", json=payment_payload, headers={"Authorization": request.headers.get("Authorization")})
+    # payment_response = requests.post(f"{PAYMENT_SERVICE_URL}/create-payment", json=payment_payload, headers={"Authorization": request.headers.get("Authorization")})
 
-    if payment_response.status_code != 201:
-        return Response({"error": "Failed to initiate payment", "details": payment_response.json()}, status=payment_response.status_code)
+    # if payment_response.status_code != 201:
+    #     return Response({"error": "Failed to initiate payment", "details": payment_response.json()}, status=payment_response.status_code)
 
-    return Response({"shipment": serializer.data, "payment": payment_response.json()}, status=status.HTTP_201_CREATED)
+    # return Response({"shipment": serializer.data, "payment": payment_response.json()}, status=status.HTTP_201_CREATED)
+    return Response({"shipment": serializer.data}, status=status.HTTP_201_CREATED)
 
 
 # API 2: Get a specific shipment (Admin)
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
+# @permission_classes([IsAdminUser])
 def get_shipment(request, shipment_id):
     try:
         shipment = Shipping.objects.get(id=shipment_id)
@@ -81,7 +82,7 @@ def get_all_customer_shipments(request):
 
 # API 4: Track a shipment by tracking number
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def track_shipment(request, tracking_number):
     try:
         shipment = Shipping.objects.get(tracking_number=tracking_number)
