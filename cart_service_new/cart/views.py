@@ -21,7 +21,7 @@ def get_product_detail(product_id):
         return None
 
 @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def add_to_cart(request):
     """Add product to cart"""
     # user_id = 1
@@ -37,11 +37,19 @@ def add_to_cart(request):
     product_detail = get_product_detail(product_id)
     if not product_detail:
         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    product_price = product_detail.get("price")
 
     cart, _ = Cart.objects.get_or_create(user_id=user_id)
     
     cart_item, created = CartItem.objects.get_or_create(cart=cart, product_id=product_id)
-    cart_item.quantity = cart_item.quantity + quantity if not created else quantity
+
+    if created:
+        cart_item.quantity = quantity
+        cart_item.price = product_price  # Store product price
+    else:
+        cart_item.quantity += quantity  # Increase quantity, price remains same
+
     cart_item.save()
     
     return Response(CartItemSerializer(cart_item).data, status=status.HTTP_201_CREATED)

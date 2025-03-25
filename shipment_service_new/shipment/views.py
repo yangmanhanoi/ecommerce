@@ -12,7 +12,7 @@ PAYMENT_SERVICE_URL = 'http://localhost:8001/api/payments/'
 
 # API 1: Create a Shipment (Called after checkout)
 @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def create_shipment(request):
     """Create shipment after checkout"""
   
@@ -83,13 +83,22 @@ def get_all_customer_shipments(request):
 # API 4: Track a shipment by tracking number
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
-def track_shipment(request, tracking_number):
+def track_shipment(request, identifier):
+    """
+    Retrieve shipment details using either tracking_number or shipment_id.
+    """
     try:
-        shipment = Shipping.objects.get(tracking_number=tracking_number)
+        if identifier.isdigit():  # If identifier is all digits, assume it's a shipment_id
+            shipment = Shipping.objects.get(id=identifier)
+        else:  # Otherwise, assume it's a tracking_number
+            shipment = Shipping.objects.get(tracking_number=identifier)
+
         serializer = ShippingSerializer(shipment)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
     except Shipping.DoesNotExist:
-        return Response({"error": "Tracking number not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Shipment not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 # API 5: Update shipment status (Admin only)
