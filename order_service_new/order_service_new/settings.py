@@ -50,7 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'order_service_new.middleware.JWTAuthMiddleware', 
+    # 'order_service_new.middleware.JWTAuthMiddleware', 
 ]
 
 ROOT_URLCONF = 'order_service_new.urls'
@@ -80,9 +80,9 @@ WSGI_APPLICATION = 'order_service_new.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'order_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin_123',
+        'NAME': 'orders_db',
+        'USER': 'namdt25',
+        'PASSWORD': 'namdt25',
         'HOST': 'localhost',
         'PORT': '5432',
     },

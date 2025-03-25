@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 
-PRODUCT_SERVICE_URL = 'http://localhost:5001/api/product/'
+PRODUCT_SERVICE_URL = 'http://localhost:5001/products/'
 SHIPMENT_SERVICE_URL = 'http://localhost:5003/api/shipments/'
 
 def get_product_detail(product_id):
@@ -21,16 +21,19 @@ def get_product_detail(product_id):
         return None
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @csrf_exempt
+# @token_required
+# @permission_classes([IsAuthenticated])
 def add_to_cart(request):
     """Add product to cart"""
-    # user_id = 1
-    user_id = request.user.id
+    
+    # user_id = request.user_data.get("user_id")
     serializer = CartItemSerializer(data=request.data)
     
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    user_id = request.data.get("user_id")
     product_id = serializer.validated_data["product_id"]
     quantity = serializer.validated_data.get("quantity", 1)
     
@@ -124,7 +127,7 @@ def filter_cart_by_time(request):
 @api_view(['POST'])
 # @permission_classes([IsAuthenticated])
 def check_out(request):
-    user_id = request.user.id
+    user_id = request.data.get("user_id")
     # user_id = 1
     data = request.data.get("items", [])
 

@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'g!s9*s#kr94=3(3&!q%8%&wvi_*^wp@m1dog69=t0&j!!b(eyx'
+SECRET_KEY = 'django-insecure-rsnl*nk(+yo+0*w#9@sgxbih5pi(ethaj4%r$7d%@bt!!mvyts'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -56,7 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'cart_service_new.middleware.JWTAuthMiddleware', 
+    # 'cart_service_new.middleware.JWTAuthMiddleware', 
 ]
 
 ROOT_URLCONF = 'cart_service_new.urls'
@@ -86,9 +86,9 @@ WSGI_APPLICATION = 'cart_service_new.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'order_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin_123',
+        'NAME': 'orders_db',
+        'USER': 'namdt25',
+        'PASSWORD': 'namdt25',
         'HOST': 'localhost',
         'PORT': '5432',
     },
@@ -132,3 +132,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+from datetime import timedelta
+SIMPLE_JWT = {
+    'SIGNING_KEY': SECRET_KEY,
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}

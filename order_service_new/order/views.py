@@ -22,7 +22,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     ViewSet for managing orders.
     """
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated]  # Ensure only authenticated users access
+    # permission_classes = [IsAuthenticated]  # Ensure only authenticated users access
     # authentication_classes = [JWTAuthentication]  # Uncomment if using JWT
     
     def get_queryset(self):
@@ -39,7 +39,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         """
         Create a new order with items and include shipment cost.
         """
-        user = request.user
+        user_id = request.data.get("user_id")
         shipment_id = request.data.get('shipment_id')
         payment_id = request.data.get('payment_id')
         items = request.data.get('items', [])  # Expecting a list of items
@@ -81,7 +81,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         # Create order
         order = Order.objects.create(
-            user_id=user.id,
+            user_id=user_id,
             shipment_id=shipment_id,
             payment_id=payment_id,
             total_price=total_price

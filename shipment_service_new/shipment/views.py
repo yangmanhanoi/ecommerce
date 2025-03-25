@@ -12,7 +12,7 @@ PAYMENT_SERVICE_URL = 'http://localhost:8001/api/payments/'
 
 # API 1: Create a Shipment (Called after checkout)
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def create_shipment(request):
     """Create shipment after checkout"""
   
