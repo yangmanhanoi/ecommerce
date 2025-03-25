@@ -22,7 +22,7 @@ parameters = pika.ConnectionParameters(
 connection = pika.BlockingConnection(parameters=parameters)
 channel = connection.channel()
 channel.queue_declare(queue=SHIPMENT_ORDER_QUEUE_NAME)
-
+channel.queue_declare(queue=PAYMENT_ORDER_QUEUE_NAME)
 def callback(ch, method, properties, body):
 
     """Process messages from RabbitMQ"""
