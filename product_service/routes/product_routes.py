@@ -12,6 +12,8 @@ product_bp = Blueprint("product", __name__)
 BOOK_SERVICE_URL = 'http://localhost:5005'
 MOBILE_SERVICE_URL = 'http://localhost:5006'
 CLOTHES_SERVICE_URL = 'http://localhost:5007'
+RECOMMENDATION_SERVICE_URL = "http://localhost:5000/recommend"
+
 @product_bp.route("/products", methods=["GET"])
 def get_all_products():
     products = list(products_collection.find({}))
@@ -180,3 +182,29 @@ def filter_products():
         product["_id"] = str(product["_id"])
     
     return jsonify(products), 200
+
+
+
+@product_bp.route("/products/recommend", methods=["GET"])
+def recommend_books():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "user_id is required"}), 400
+
+    # Call the Flask recommendation API
+    response = requests.get(f"{RECOMMENDATION_SERVICE_URL}?user_id={user_id}")
+
+    if response.status_code == 200:
+        recommended_books = response.json()
+
+        # Fetch book details from MongoDB
+        book_ids = [ObjectId(book["book_id"]) for book in recommended_books]
+        books = list(products_collection.find({"_id": {"$in": book_ids}, "category": "Book"}))
+
+        # Convert `_id` from ObjectId to string
+        for book in books:
+            book["_id"] = str(book["_id"])
+
+        return jsonify(books), 200
+    else:
+        return jsonify({"error": "Failed to fetch recommendations"}), response.status_code
