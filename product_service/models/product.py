@@ -67,3 +67,16 @@ class Book(Product):
             "published_year": self.published_year
         })
         return data
+
+class Comment:
+    def __init__(self, book_id, comment, evaluate):
+        self.book_id = book_id
+        self.comment = comment
+        self.evaluate = evaluate
+    
+    def to_dict(self):
+        return {
+            "book_id": self.book_id,
+            "comment": self.comment,
+            "evaluate": self.evaluate
+        }
