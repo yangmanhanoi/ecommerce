@@ -2,11 +2,18 @@ from datetime import datetime
 import requests
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Cart, CartItem
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .serializers import CartSerializer, CartItemSerializer
+import logging
+from cart_service_new.middleware import NoDBJWTAuthentication
+from rest_framework.permissions import AllowAny
+
+logger = logging.getLogger(__name__)
 
 PRODUCT_SERVICE_URL = 'http://localhost:5001/products/'
 SHIPMENT_SERVICE_URL = 'http://localhost:5003/api/shipments/'
@@ -21,19 +28,29 @@ def get_product_detail(product_id):
         return None
 
 @api_view(['POST'])
-# @csrf_exempt
-# @token_required
-# @permission_classes([IsAuthenticated])
+@authentication_classes([NoDBJWTAuthentication])
+@permission_classes([AllowAny])
 def add_to_cart(request):
     """Add product to cart"""
     
+    try:
+        # Get the decoded JWT payload (now attached to request.user if using DummyUser)
+        if hasattr(request.user, 'username'):
+            user_id = request.user.id
+        else:
+            # Fallback: use request.auth if DummyUser isn’t working
+            token_payload = request.auth
+            user_id = token_payload.get('user_id')
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return Response({"error": str(e)}, status=401)
     # user_id = request.user_data.get("user_id")
     serializer = CartItemSerializer(data=request.data)
     
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    user_id = request.data.get("user_id")
+    #user_id = request.data.get("user_id")
     product_id = serializer.validated_data["product_id"]
     quantity = serializer.validated_data.get("quantity", 1)
     
@@ -151,3 +168,33 @@ def check_out(request):
     if shipment_response.status_code != 201:
         return Response({"error": "Failed to create shipment", "details": shipment_response.json()}, status=shipment_response.status_code)
     return Response(shipment_response.json(), status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@authentication_classes([NoDBJWTAuthentication])
+@permission_classes([AllowAny])
+def test_access(request):
+    try:
+        # Get the decoded JWT payload (now attached to request.user if using DummyUser)
+        if hasattr(request.user, 'username'):
+            username = request.user.username
+            user_id = request.user.id
+            role = request.user.role
+            email = request.user.email
+        else:
+            # Fallback: use request.auth if DummyUser isn’t working
+            token_payload = request.auth
+            username = token_payload.get('username', 'anonymous')
+            user_id = token_payload.get('user_id')
+            role = token_payload.get('role', 'user')
+            email = token_payload.get('email')
+
+        return Response({
+            "message": f"Cart for user {username}",
+            "user_id": user_id,
+            "role": role,
+            "email": email,
+            "token_claims": token_payload if 'token_payload' in locals() else None
+        })
+    except Exception as e:
+        logger.error(f"Error in test_access: {str(e)}")
+        return Response({"error": str(e)}, status=401)

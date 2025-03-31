@@ -9,4 +9,5 @@ urlpatterns = [
     path('/total-price', calculate_total_price),
     path('/filter-by-time', filter_cart_by_time),
     path('/check-out', check_out),
+    path('/test', test_access)
 ]
