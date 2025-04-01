@@ -3,7 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status, views, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .serializers import SignupSerializer, CustomTokenObtainPairSerializer
+from .serializers import SignupSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer
+from .models import UserProfile, CustomerType
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 class SignupView(views.APIView):
@@ -44,3 +46,33 @@ class ProtectedView(views.APIView):
 
     def get(self, request):
         return Response({"message": f"Hello, {request.user.username}!"})
+    
+class AssignCustomerTypeView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def patch(self, request, user_id):
+        user_profile = get_object_or_404(UserProfile, user_id=user_id)
+        serializer = UserProfileSerializer(user_profile, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "message": "Customer type updated successfully",
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GetCustomerTypeView(views.APIView):
+    """Returns a list of all available customer types."""
+    def get(self, request):
+        return Response({"customer_types": [choice[0] for choice in CustomerType.choices]}, status=status.HTTP_200_OK)
+    
+class RemoveCustomerTypeView(views.APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request, user_id):
+        user_profile = get_object_or_404(UserProfile, user__id=user_id)
+        user_profile.customer_type = None  # Reset customer type
+        user_profile.save()
+        return Response({"message": "Customer type removed successfully"}, status=status.HTTP_200_OK)
