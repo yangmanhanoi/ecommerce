@@ -184,6 +184,28 @@ def filter_products():
     return jsonify(products), 200
 
 
+@product_bp.route("/products/comment", methods=["POST"])
+def add_comment(product_id):
+    data = request.get_json()
+    user_id = data.get("user_id", "").strip()
+    product_id = data.get("product_id", "").strip()
+    comment = data.get("comment", "").strip()
+
+    if not user_id or not product_id or not comment:
+        return jsonify({"error": "Missing user_id, product_id, or comment"}), 400
+
+    # Call sentiment prediction API
+    response = requests.post(f"{RECOMMENDATION_SERVICE_URL}/predict", json={
+        "user_id": user_id,
+        "product_id": product_id,
+        "comment": comment
+    })
+
+    if response.status_code == 200:
+        return jsonify(response.json()), 201
+    else:
+        return jsonify({"error": "Failed to analyze sentiment"}), 500
+
 
 @product_bp.route("/products/recommend", methods=["GET"])
 def recommend_books():
