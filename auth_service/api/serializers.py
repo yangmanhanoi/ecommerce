@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserProfile
+from .models import UserProfile, CustomerType
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -54,3 +54,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['role'] = role
 
         return token
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    customer_type = serializers.ChoiceField(choices=CustomerType.choices, required=True)
+
+    class Meta:
+        model = UserProfile
+        fields = ['customer_type']

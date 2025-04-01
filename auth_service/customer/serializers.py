@@ -2,14 +2,16 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from api.models import UserProfile
 from .models import Address
+from api.models import CustomerType
 
 class UserProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
+    customer_type = serializers.ChoiceField(choices=CustomerType.choices, required=False)  # ✅ Add this line
 
     class Meta:
         model = UserProfile
-        fields = ['username', 'email', 'phoneNumber', 'imageUrl']
+        fields = ['username', 'email', 'phoneNumber', 'imageUrl', 'customer_type']
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
