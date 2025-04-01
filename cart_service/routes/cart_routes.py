@@ -32,6 +32,15 @@ def add_to_cart():
     if not user_id or not product_id:
         return jsonify({"error": "User ID and Product ID are required"}), 400
     
+    product_detail = get_product_detail(product_id=product_id)
+    available_stock = product_detail.get("stock", 0)
+    
+    if available_stock == 0:
+        return jsonify({"error": "No available product"}), 400  # Return error if out of stock
+
+    if quantity > available_stock:
+        return jsonify({"error": "Requested quantity exceeds available stock"}), 400
+
     new_cart_item = Cart(user_id=user_id, product_id=product_id, quantity=quantity)
     db.session.add(new_cart_item)
     db.session.commit()

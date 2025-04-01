@@ -3,8 +3,16 @@ from auth_middleware import token_required, admin_required
 from bson.objectid import ObjectId
 from database import products_collection
 from models.product import Book, Clothes, Mobile
+from datetime import datetime
+import requests
 # Create a Blueprint for products
 product_bp = Blueprint("product", __name__)
+
+
+BOOK_SERVICE_URL = 'http://localhost:5005'
+MOBILE_SERVICE_URL = 'http://localhost:5006'
+CLOTHES_SERVICE_URL = 'http://localhost:5007'
+RECOMMENDATION_SERVICE_URL = "http://localhost:5000/recommend"
 
 @product_bp.route("/products", methods=["GET"])
 def get_all_products():
@@ -20,22 +28,65 @@ def get_all_products():
 def add_product():
     data = request.get_json()
     category = data.get("category")
-    product = None
+    product = {
+        "name": data["name"],
+        "category": data["category"],
+        "price": data["price"],
+        "stock": data["stock"],
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    product_id = products_collection.insert_one(product).inserted_id
 
     if category == "Book":
-        product = Book(data["name"], data["price"], data["stock"], data["author"], data["isbn"], data["published_year"])
-        
+        book_data = {
+            "product_id": str(product_id),
+            "name": data["name"],
+            "author_ids": data["author_ids"],  # Danh sách ID tác giả
+            "publisher": data["publisher"],
+            "isbn": data["isbn"],
+            "pages": data["pages"],
+            "language": data["language"],
+            "published_year": data["published_year"]
+        }
+
+        response = requests.post(f"{BOOK_SERVICE_URL}/books", json=book_data)
+        if response.status_code != 201:
+            return jsonify({"error": "Failed to save book details"}), 500
     elif category == "Clothes":
-        product = Clothes(data["name"], data["price"], data["stock"], data["size"], data["color"], data["material"])
+        clothes_data = {
+            "product_id": str(product_id),
+            "name": data["name"],
+            "brand_id": data["brand_id"],
+            "size": data["size"],
+            "color": data["color"],
+            "material": data["material"],
+            "gender": data["gender"]
+        }
+
+        response = requests.post(f"{CLOTHES_SERVICE_URL}/clothes", json=clothes_data)
+        if response.status_code != 201:
+            return jsonify({"error": "Failed to save clothes details"}), 500
         
     elif category == "Mobile":
-        product = Mobile(data["name"], data["price"], data["stock"], data["ram"], data["storage"], data["battery"])
+        mobile_data = {
+            "product_id": str(product_id),
+            "name": data["name"],
+            "brand": data["brand"],
+            "model": data["model"],
+            "ram": data["ram"],
+            "storage": data["storage"],
+            "battery": data["battery"],
+            "screen_size": data["screen_size"],
+            "os": data["os"]
+        }
+        response = requests.post(f"{MOBILE_SERVICE_URL}/mobiles", json=mobile_data)
+        if response.status_code != 201:
+            return jsonify({"error": "Failed to save mobile details"}), 500
         
     else:
         return jsonify({"error": "Invalid category"}), 400
     
-    products_collection.insert_one(product.to_dict())
-    return jsonify({"message": "Product added successfully"}), 201
+    return jsonify({"message": "Item added successfully!", "product_id": str(product_id)}), 201
 
 
 # Get product by id
@@ -131,3 +182,51 @@ def filter_products():
         product["_id"] = str(product["_id"])
     
     return jsonify(products), 200
+
+
+@product_bp.route("/products/comment", methods=["POST"])
+def add_comment(product_id):
+    data = request.get_json()
+    user_id = data.get("user_id", "").strip()
+    product_id = data.get("product_id", "").strip()
+    comment = data.get("comment", "").strip()
+
+    if not user_id or not product_id or not comment:
+        return jsonify({"error": "Missing user_id, product_id, or comment"}), 400
+
+    # Call sentiment prediction API
+    response = requests.post(f"{RECOMMENDATION_SERVICE_URL}/predict", json={
+        "user_id": user_id,
+        "product_id": product_id,
+        "comment": comment
+    })
+
+    if response.status_code == 200:
+        return jsonify(response.json()), 201
+    else:
+        return jsonify({"error": "Failed to analyze sentiment"}), 500
+
+
+@product_bp.route("/products/recommend", methods=["GET"])
+def recommend_books():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "user_id is required"}), 400
+
+    # Call the Flask recommendation API
+    response = requests.get(f"{RECOMMENDATION_SERVICE_URL}?user_id={user_id}")
+
+    if response.status_code == 200:
+        recommended_books = response.json()
+
+        # Fetch book details from MongoDB
+        book_ids = [ObjectId(book["book_id"]) for book in recommended_books]
+        books = list(products_collection.find({"_id": {"$in": book_ids}, "category": "Book"}))
+
+        # Convert `_id` from ObjectId to string
+        for book in books:
+            book["_id"] = str(book["_id"])
+
+        return jsonify(books), 200
+    else:
+        return jsonify({"error": "Failed to fetch recommendations"}), response.status_code
