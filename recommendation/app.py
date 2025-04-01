@@ -42,11 +42,11 @@ def predict_sentiment(comment, model):
 def predict():
     data = request.get_json()
     user_id = data.get("user_id", "").strip()
-    book_id = data.get("book_id", "").strip()  # Ensure book_id is provided
+    product_id = data.get("product_id", "").strip()  # Ensure book_id is provided
     comment = data.get("comment", "").strip()
 
-    if not book_id or not comment:
-        return jsonify({"error": "Missing book_id or comment"}), 400
+    if not product_id or not comment:
+        return jsonify({"error": "Missing product_id or comment"}), 400
 
     # Predict sentiment using different models
     cnn_pred = predict_sentiment(comment, cnn_model)
@@ -60,14 +60,14 @@ def predict():
     # Save to MongoDB
     comment_data = {
         "user_id": user_id,
-        "book_id": book_id,
+        "product_id": product_id,
         "comment": comment,
         "evaluate": int(final_prediction)  # Store as 0, 1, or 2
     }
     comments_collection.insert_one(comment_data)
     return jsonify({
         "user_id": user_id,
-        "book_id": str(book_id),  # Convert ObjectId to string for JSON
+        "product_id": str(product_id),  # Convert ObjectId to string for JSON
         "comment": comment,
         "evaluate": int(final_prediction),  # Ensure JSON serializable format
         "message": "Sentiment saved successfully"
@@ -83,8 +83,8 @@ def fetch_books():
 
 # Get sentiment scores from MongoDB
 def fetch_sentiment_scores():
-    comments = list(comments_collection.find({}, {"_id": 0, "book_id": 1, "evaluate": 1}))
-    return {str(comment["book_id"]): comment["evaluate"] for comment in comments}
+    comments = list(comments_collection.find({}, {"_id": 0, "product_id": 1, "evaluate": 1}))
+    return {str(comment["product_id"]): comment["evaluate"] for comment in comments}
 
 # Convert book data into a single text representation
 def get_book_text_representation(book):
@@ -100,13 +100,13 @@ def recommend_books():
     # Fetch user reviews with positive sentiment
     liked_books = list(comments_collection.find(
         {"user_id": user_id, "evaluate": {"$gte": 1}},  # Positive sentiment (1=positive, 2=very positive)
-        {"_id": 0, "book_id": 1}
+        {"_id": 0, "product_id": 1}
     ))
 
     if not liked_books:
         return jsonify({"message": "No liked books found for this user", "recommended_books": []}), 200
 
-    liked_book_ids = [str(book["book_id"]) for book in liked_books]
+    liked_book_ids = [str(book["product_id"]) for book in liked_books]
 
     # Fetch all books from MongoDB
     books = fetch_books()
