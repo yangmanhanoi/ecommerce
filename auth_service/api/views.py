@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from .serializers import SignupSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer
 from .models import UserProfile, CustomerType
 from django.shortcuts import get_object_or_404
+from django.views.generic import TemplateView
 
 # Create your views here.
 class SignupView(views.APIView):
@@ -76,3 +77,7 @@ class RemoveCustomerTypeView(views.APIView):
         user_profile.customer_type = None  # Reset customer type
         user_profile.save()
         return Response({"message": "Customer type removed successfully"}, status=status.HTTP_200_OK)
+    
+
+class LoginPageView(TemplateView):
+    template_name = 'login.html'

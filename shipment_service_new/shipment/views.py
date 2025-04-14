@@ -9,46 +9,42 @@ import requests
 from django.conf import settings
 
 PAYMENT_SERVICE_URL = 'http://localhost:8001/api/payments/'
+CART_SERVICE_URL = 'http://localhost:8000/api/cart/'
 
 # API 1: Create a Shipment (Called after checkout)
 @api_view(['POST'])
 # @permission_classes([IsAuthenticated])
 def create_shipment(request):
     """Create shipment after checkout"""
-  
-    cart_id = request.data.get('cart_id')  # Get cart ID from request
-    items = request.data.get('items', [])  # Get items from request
+    try:
+        response = requests.get(f"{CART_SERVICE_URL}cart-items")
+        response.raise_for_status()
+        cart_items_data = response.json()
+    except requests.RequestException as e:
+        return Response({
+            "error": "Failed to contact Cart Service",
+            "details": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    if not cart_id or not items:
-        return Response({"error": "Cart ID and items are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not cart_items_data or "cart_id" not in cart_items_data:
+        return Response({
+            "error": "Cart ID and items are required from Cart Service"
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    # Generate a tracking number (this should ideally be more robust)
-    tracking_number = f"TRK{cart_id}{datetime.utcnow().timestamp()}"
+    cart_id = cart_items_data["cart_id"]
+    timestamp = int(datetime.utcnow().timestamp())
+    tracking_number = f"TRK{cart_id}{timestamp}"
 
     shipment = Shipping.objects.create(
         cart_id=cart_id,
         tracking_number=tracking_number,
-        carrier="Shopee",  # Default carrier
+        carrier=request.data.get("carrier", "Shopee"),
         shipping_address=request.data.get("shipping_address", ""),
         shipping_cost=request.data.get("shipping_cost", 0.00),
         status="pending"
     )
 
     serializer = ShippingSerializer(shipment)
-
-    # Notify Payment Service
-    # payment_payload = {
-    #     "user_id": user_id,
-    #     "shipment_id": shipment.id,
-    #     "amount": shipment.shipping_cost,
-    #     "tracking_number": tracking_number
-    # }
-    
-    # payment_response = requests.post(f"{PAYMENT_SERVICE_URL}/create-payment", json=payment_payload, headers={"Authorization": request.headers.get("Authorization")})
-
-    # if payment_response.status_code != 201:
-    #     return Response({"error": "Failed to initiate payment", "details": payment_response.json()}, status=payment_response.status_code)
-
     # return Response({"shipment": serializer.data, "payment": payment_response.json()}, status=status.HTTP_201_CREATED)
     return Response({"shipment": serializer.data}, status=status.HTTP_201_CREATED)
 

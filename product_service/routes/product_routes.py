@@ -24,10 +24,52 @@ def get_all_products():
 
 @product_bp.route("/products/view", methods=["GET"])
 def view_products_page():
-    products = list(products_collection.find({}))
-    for product in products:
-        product["_id"] = str(product["_id"])
-    return render_template("products.html", products=products)
+    # products = list(products_collection.find({}))
+    # for product in products:
+    #     product["_id"] = str(product["_id"])
+    test_products = [
+    {
+        "_id": "1",
+        "name": "Wireless Headphones",
+        "description": "Noise-cancelling over-ear headphones.",
+        "price": 99.99,
+        "category": "Electronics",
+        "stock": 25,
+        "image_url": "https://via.placeholder.com/150",
+        "published_year": 2022,
+        "language": "English",
+        "author_ids": [1],
+        "publisher": "SoundTech"
+    },
+    {
+        "_id": "2",
+        "name": "The Art of Coding",
+        "description": "An inspiring guide for developers.",
+        "price": 39.50,
+        "category": "Books",
+        "stock": 50,
+        "image_url": "https://via.placeholder.com/150",
+        "published_year": 2020,
+        "language": "English",
+        "author_ids": [2],
+        "publisher": "CodeBooks"
+    },
+    {
+        "_id": "3",
+        "name": "Eco Water Bottle",
+        "description": "Reusable stainless steel bottle.",
+        "price": 15.75,
+        "category": "Fashion",
+        "stock": 80,
+        "image_url": "https://via.placeholder.com/150",
+        "published_year": 2023,
+        "language": "None",
+        "author_ids": [],
+        "publisher": "GreenLife"
+    }
+]
+
+    return render_template("products.html", products=test_products)
 
 # add new product
 @product_bp.route("/products/add-item", methods=["POST"])

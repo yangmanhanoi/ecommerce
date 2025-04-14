@@ -223,3 +223,7 @@ def get_cart_items(request):
     print(serialized_cart_items)
 
     return render(request, 'cart_view.html', {"cart_items": serialized_cart_items, "message": ""})
+
+@api_view(['GET'])
+def add_cart_shipment(request):
+    return render(request, 'add_ship.html')
