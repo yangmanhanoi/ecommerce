@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, render_template, request, jsonify
 from auth_middleware import token_required, admin_required
 from bson.objectid import ObjectId
 from database import products_collection
@@ -21,6 +21,13 @@ def get_all_products():
     for product in products:
         product["_id"] = str(product["_id"])
     return jsonify(products), 200
+
+@product_bp.route("/products/view", methods=["GET"])
+def view_products_page():
+    products = list(products_collection.find({}))
+    for product in products:
+        product["_id"] = str(product["_id"])
+    return render_template("products.html", products=products)
 
 # add new product
 @product_bp.route("/products/add-item", methods=["POST"])
@@ -187,7 +194,7 @@ def filter_products():
 @product_bp.route("/products/comment", methods=["POST"])
 def add_comment(product_id):
     data = request.get_json()
-    user_id = data.get("user_id", "").strip()
+    user_id = data.get("user_id", 1)
     product_id = data.get("product_id", "").strip()
     comment = data.get("comment", "").strip()
 

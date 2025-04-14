@@ -69,14 +69,14 @@ class Book(Product):
         return data
 
 class Comment:
-    def __init__(self, book_id, comment, evaluate):
-        self.book_id = book_id
+    def __init__(self, product_id, comment, evaluate):
+        self.product_id = product_id
         self.comment = comment
         self.evaluate = evaluate
     
     def to_dict(self):
         return {
-            "book_id": self.book_id,
+            "book_id": self.product_id,
             "comment": self.comment,
             "evaluate": self.evaluate
         }

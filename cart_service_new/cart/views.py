@@ -1,6 +1,6 @@
 from datetime import datetime
 import requests
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.response import Response
@@ -28,8 +28,8 @@ def get_product_detail(product_id):
         return None
 
 @api_view(['POST'])
-@authentication_classes([NoDBJWTAuthentication])
-@permission_classes([AllowAny])
+# @authentication_classes([NoDBJWTAuthentication])
+# @permission_classes([AllowAny])
 def add_to_cart(request):
     """Add product to cart"""
     
@@ -60,7 +60,7 @@ def add_to_cart(request):
     
     product_price = product_detail.get("price")
 
-    cart, _ = Cart.objects.get_or_create(user_id=user_id)
+    cart, _ = Cart.objects.get_or_create(user_id=6)
     
     cart_item, created = CartItem.objects.get_or_create(cart=cart, product_id=product_id)
 
@@ -198,3 +198,28 @@ def test_access(request):
     except Exception as e:
         logger.error(f"Error in test_access: {str(e)}")
         return Response({"error": str(e)}, status=401)
+
+
+@api_view(['GET'])
+def get_cart_items(request):
+    """Retrieve cart items and return an HTML interface"""
+    user_id = request.user.id
+    # user_id = 1  # Uncomment for testing with a fixed user ID
+    cart = Cart.objects.filter(user_id=6).first()
+
+    if not cart:
+        return render(request, 'cart_view.html', {"message": "Cart is empty", "cart_items": []})
+
+    cart_items = cart.items.all()
+    serialized_cart_items = CartItemSerializer(cart_items, many=True).data
+
+    # Fetch product details for each cart item
+    for item in serialized_cart_items:
+        product_id = item.get("product_id")  # Make sure your serializer includes 'product_id'
+        product_details = get_product_detail(product_id)
+        if product_details:
+            item["product_details"] = product_details  # Add details to the cart item
+
+    print(serialized_cart_items)
+
+    return render(request, 'cart_view.html', {"cart_items": serialized_cart_items, "message": ""})

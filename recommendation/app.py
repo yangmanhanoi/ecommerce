@@ -15,7 +15,7 @@ CORS(app)  # Enable CORS for all routes
 client = MongoClient("mongodb://localhost:27017/")
 db = client["ecommerce_db"]  # Your MongoDB database
 books_collection = db["books"]  # Collection for books
-comments_collection = db["comments"]  # Collection for comments
+comments_collection = db['comments']  # Collection for comments
 
 # Load models
 cnn_model = tf.keras.models.load_model("models/cnn_sentiment_model.h5")
@@ -41,7 +41,7 @@ def predict_sentiment(comment, model):
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
-    user_id = data.get("user_id", "").strip()
+    user_id = data.get("user_id", 1)
     product_id = data.get("product_id", "").strip()  # Ensure book_id is provided
     comment = data.get("comment", "").strip()
 
@@ -76,7 +76,7 @@ def predict():
 
 # Get all books from MongoDB
 def fetch_books():
-    books = list(books_collection.find({}, {"_id": 1, "title": 1, "author_ids": 1, "publisher": 1, "language": 1, "published_year": 1}))
+    books = list(books_collection.find({}, {"_id": 1,"product_id":1, "name": 1, "author_ids": 1, "publisher": 1, "language": 1, "published_year": 1}))
     for book in books:
         book["id"] = str(book["_id"])  # Convert ObjectId to string
     return books
@@ -84,7 +84,8 @@ def fetch_books():
 # Get sentiment scores from MongoDB
 def fetch_sentiment_scores():
     comments = list(comments_collection.find({}, {"_id": 0, "product_id": 1, "evaluate": 1}))
-    return {str(comment["product_id"]): comment["evaluate"] for comment in comments}
+    print("Retrieved Comments from MongoDB:", comments)
+    return {str(comment.get("product_id")): comment.get("evaluate") for comment in comments}
 
 # Convert book data into a single text representation
 def get_book_text_representation(book):
@@ -92,7 +93,8 @@ def get_book_text_representation(book):
 
 @app.route("/recommend", methods=["GET"])
 def recommend_books():
-    user_id = request.args.get("user_id")
+    data = request.get_json()
+    user_id = data.get("user_id", 1)
 
     if not user_id:
         return jsonify({"error": "Missing user_id"}), 400
@@ -102,25 +104,32 @@ def recommend_books():
         {"user_id": user_id, "evaluate": {"$gte": 1}},  # Positive sentiment (1=positive, 2=very positive)
         {"_id": 0, "product_id": 1}
     ))
+    
 
     if not liked_books:
         return jsonify({"message": "No liked books found for this user", "recommended_books": []}), 200
 
     liked_book_ids = [str(book["product_id"]) for book in liked_books]
+    
 
     # Fetch all books from MongoDB
     books = fetch_books()
     sentiment_scores = fetch_sentiment_scores()
+    
+    print("tttt:",sentiment_scores)
+    print("111:",liked_book_ids)
 
     # Get representations of books for TF-IDF
     book_texts = [get_book_text_representation(book) for book in books]
+
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(book_texts)
 
     # Find similar books based on liked books
     recommended_books = {}
     for book_id in liked_book_ids:
-        target_book = next((book for book in books if book["id"] == book_id), None)
+        target_book = next((book for book in books if book["product_id"] == book_id), None)
+        print(target_book)
         if not target_book:
             continue
 
@@ -128,20 +137,20 @@ def recommend_books():
         cosine_similarities = cosine_similarity(tfidf_matrix[target_index], tfidf_matrix).flatten()
 
         for i, book in enumerate(books):
-            if book["id"] != book_id and book["id"] not in liked_book_ids:
+            if book["product_id"] != book_id and book["product_id"] not in liked_book_ids:
                 similarity_score = cosine_similarities[i]
-                sentiment_score = sentiment_scores.get(book["id"], 0)  # Default 0 if no sentiment data
-                if book["id"] in recommended_books:
-                    recommended_books[book["id"]]["similarity"] += similarity_score
-                    recommended_books[book["id"]]["sentiment"] = max(recommended_books[book["id"]]["sentiment"], sentiment_score)
+                sentiment_score = sentiment_scores.get(book["product_id"], 0)  # Default 0 if no sentiment data
+                if book["product_id"] in recommended_books:
+                    recommended_books[book["product_id"]]["similarity"] += similarity_score
+                    recommended_books[book["product_id"]]["sentiment"] = max(recommended_books[book["product_id"]]["sentiment"], sentiment_score)
                 else:
-                    recommended_books[book["id"]] = {"book": book, "similarity": similarity_score, "sentiment": sentiment_score}
+                    recommended_books[book["product_id"]] = {"book": book, "similarity": similarity_score, "sentiment": sentiment_score}
 
     # Sort books by sentiment score first, then similarity
     sorted_books = sorted(recommended_books.values(), key=lambda x: (x["sentiment"], x["similarity"]), reverse=True)
 
     # Return top 5 recommendations
-    response = [{"id": book["book"]["id"], "title": book["book"]["title"], "score": book["sentiment"]} for book in sorted_books[:5]]
+    response = [{"id": book["book"]["product_id"], "name": book["book"]["name"], "score": book["sentiment"]} for book in sorted_books[:5]]
 
     return jsonify({"recommended_books": response})
 

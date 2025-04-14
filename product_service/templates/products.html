@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Product List</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        tr {
+            cursor: pointer;
+        }
+
+        tr:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+    <script>
+        function addToCartAndGoToCartView(productId) {
+            fetch('http://127.0.0.1:8000/api/carts/add-to-cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                  
+                },
+                body: JSON.stringify({ user_id: 6, product_id: productId, quantity: 1 })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.product_id) {
+                    window.location.href = '/cart_service/get_cart_detail/';
+                } else {
+                    alert("Failed to add to cart: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error adding to cart. Please check the console.");
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <h1>All Products</h1>
+    <table>
+        <thead>
+            <tr>
+                
+                <th>Name</th>
+                <th>Price</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr onclick="addToCartAndGoToCartView('{{ product._id }}')">
+               <!-- Fixed: Use forloop.counter -->
+                <td>{{ product.name }}</td>
+                <td>{{ product.price }}</td>
+                <td>{{ product.category }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+
+</html>
