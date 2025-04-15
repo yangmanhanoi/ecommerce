@@ -207,10 +207,9 @@
                                 <td><strong>{{ item.product_details.name }}</strong></td>
                                 <td>{{ item.quantity }}</td>
                                 <td>${{ item.product_details.price }}</td>
-                                <td class="text-danger fw-bold">${{
-                                    item.product_details.price|floatformat:2|multiply:item.quantity }}</td>
+                                <td class="text-danger fw-bold">${{item.total_price }}</td>
                                 <td class="text-center">
-                                    <a href="{% url 'remove_from_cart' item.id %}"
+                                    <a href=""
                                         class="btn btn-outline-danger btn-sm">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
@@ -221,7 +220,7 @@
                         <tfoot>
                             <tr class="table-light">
                                 <td colspan="4" class="text-end fw-bold">Total</td>
-                                <td class="fw-bold text-primary">${{ total_price|default:"0.00" }}</td>
+                                <td class="fw-bold text-primary">${{ total_price}}</td>
                                 <td></td>
                             </tr>
                         </tfoot>

@@ -60,6 +60,59 @@
         }
     </style>
 </head>
+<script>
+    function createShipment() {
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const address = document.getElementById("address").value.trim();
+
+        const fullAddress = `${firstName} ${lastName}, ${address}`;
+
+        let shippingPrice = 0.0;
+        if (document.getElementById("express").checked) {
+            shippingPrice = 5.99;
+        }
+
+        fetch("http://localhost:8005/api/shipments/create/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_id: 6,  // replace with dynamic user ID if needed
+                address: fullAddress,
+                shipping_price: shippingPrice
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Shipment created:", data);
+            alert("Shipment created successfully!");
+            // Redirect or show confirmation
+            window.location.href = "http://localhost:8000/order/confirm/";
+        })
+        .catch(error => {
+            console.error("Error creating shipment:", error);
+            alert("Failed to create shipment. Please try again.");
+        });
+
+        return false; // prevent default form submit
+    }
+
+    // Attach to form submit
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form");
+        form.addEventListener("submit", function (e) {
+            e.preventDefault(); // stop normal submission
+            createShipment();
+        });
+    });
+</script>
 
 <body>
 

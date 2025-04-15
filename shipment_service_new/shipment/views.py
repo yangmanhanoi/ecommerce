@@ -9,7 +9,7 @@ import requests
 from django.conf import settings
 
 PAYMENT_SERVICE_URL = 'http://localhost:8001/api/payments/'
-CART_SERVICE_URL = 'http://localhost:8000/api/cart/'
+CART_SERVICE_URL = 'http://localhost:8000/api/carts/'
 
 # API 1: Create a Shipment (Called after checkout)
 @api_view(['POST'])
@@ -20,6 +20,7 @@ def create_shipment(request):
         response = requests.get(f"{CART_SERVICE_URL}cart-items")
         response.raise_for_status()
         cart_items_data = response.json()
+        print(cart_items_data)
     except requests.RequestException as e:
         return Response({
             "error": "Failed to contact Cart Service",
@@ -34,7 +35,7 @@ def create_shipment(request):
     cart_id = cart_items_data["cart_id"]
     timestamp = int(datetime.utcnow().timestamp())
     tracking_number = f"TRK{cart_id}{timestamp}"
-
+    print(cart_id)
     shipment = Shipping.objects.create(
         cart_id=cart_id,
         tracking_number=tracking_number,
@@ -43,6 +44,7 @@ def create_shipment(request):
         shipping_cost=request.data.get("shipping_cost", 0.00),
         status="pending"
     )
+    print(shipment)
 
     serializer = ShippingSerializer(shipment)
     # return Response({"shipment": serializer.data, "payment": payment_response.json()}, status=status.HTTP_201_CREATED)

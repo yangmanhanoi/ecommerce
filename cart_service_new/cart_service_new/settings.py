@@ -92,9 +92,9 @@ WSGI_APPLICATION = 'cart_service_new.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'order_db',
-        'USER': 'postgres',
-        'PASSWORD': 'admin_123',
+        'NAME': 'orders_db',
+        'USER': 'namdt25',
+        'PASSWORD': 'namdt25',
         'HOST': 'localhost',
         'PORT': '5432',
     },
