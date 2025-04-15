@@ -212,14 +212,26 @@ def get_cart_items(request):
 
     cart_items = cart.items.all()
     serialized_cart_items = CartItemSerializer(cart_items, many=True).data
-
+    total_price = 0.0
     # Fetch product details for each cart item
     for item in serialized_cart_items:
         product_id = item.get("product_id")  # Make sure your serializer includes 'product_id'
         product_details = get_product_detail(product_id)
+        quantity = item.get("quantity", 1)
+        
         if product_details:
             item["product_details"] = product_details  # Add details to the cart item
+            price = float(product_details.get("price", 0))
+            item_total = round(price * quantity, 2)
+            item["total_price"] = item_total
+            total_price += item_total
+         
 
     print(serialized_cart_items)
+    total_price = round(total_price, 2)
 
-    return render(request, 'cart_view.html', {"cart_items": serialized_cart_items, "message": ""})
+    return render(request, 'cart_view.html', {"cart_items": serialized_cart_items, "total_price": total_price, "message": ""})
+
+@api_view(['GET'])
+def add_cart_shipment(request):
+    return render(request, 'add_ship.html')
